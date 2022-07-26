@@ -11,8 +11,11 @@ const registerUser = async (req, res) => {
     if ((message = valid.userKey(data))) {
       return res.status(400).send({ status: false, message: message });
     }
-    if(!((data.password.length>=8 )&& (data.password.length<=15))){
-        return res.status(400).send({status:false,message:"password must be  between  8-15 characters"})
+    if (!(data.password.length >= 8 && data.password.length <= 15)) {
+      return res.status(400).send({
+        status: false,
+        message: "password must be  between  8-15 characters",
+      });
     }
     let unique = await userModel
       .findOne({ $or: [{ email: data.email }, { phone: data.phone }] })
@@ -82,23 +85,40 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign({ userId: userId }, "Group19", { expiresIn: "10d" });
-    
-    res
-      .status(200)
-      .send({
-        status: true,
-        message: "User logged in successfully",
-        data: { userId, token },
-      });
+
+    res.status(200).send({
+      status: true,
+      message: "User logged in successfully",
+      data: { userId, token },
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ status: false, message: err.message });
   }
 };
 
+const userProfile = async (req, res) => {
+  try {
+    let userId = req.params.userId;
 
+    let user = await userModel.findById(userId);
 
+    if (!user) {
+      return res
+        .status(404)
+        .status({ status: false, message: "user not found" });
+    }
+    return res
+      .status(200)
+      .send({ status: true, message: "Success", data: user });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({ status: false, message: err.message });
+  }
+};
 
 module.exports = {
-  registerUser,login
+  registerUser,
+  login,
+  userProfile
 };

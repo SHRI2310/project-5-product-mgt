@@ -2,10 +2,10 @@ const mongoose = require("mongoose");
 
 let userFields = ["fname", "lname", "email", "phone", "password", "address"];
 let nameRegex = /^[A-Za-z]+$/;
-let cityRegex = /^[A-Za-z ]+$/
+let cityRegex = /^[A-Za-z ]+$/;
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 let phoneRegex = /^[6-9]{1}[0-9]{9}$/;
-let pinRegex = /^[1-9][0-9]{5}$/
+let pinRegex = /^[1-9][0-9]{5}$/;
 
 function userKey(body) {
   if (JSON.stringify(body) == "{}") return "request body cannot be empty";
@@ -43,11 +43,15 @@ function userKey(body) {
   if (error) return error;
 }
 
-function address(ele){
+function address(ele) {}
 
+function id(id) {
+  if (mongoose.isValidObjectId(id) && id.length == 24) return true;
+  return false
 }
 
 module.exports = {
   userKey,
-  emailRegex
+  emailRegex,
+  id
 };
