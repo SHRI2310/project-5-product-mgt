@@ -45,49 +45,9 @@ function userKey(body) {
 
 function address(ele){
 
-    let arr = ["street","city","pincode"]
-
-    if(!(shipping in ele)) return "shipping address in mandatory"
-    
-    let error = (type)=>{
-        arr.map(x=>{
-
-            let data = ele.type.x
-
-            if(x!="pincode"){
-                if(x=="street"){
-
-                }
-                if(x=="city"){
-                    if(!(data in ele.type)){
-                        return `city of ${type} address is missing`
-                    }
-                    if(typeof data != "string"){
-                        return `city of ${type} address should must be a string`
-                    }
-                }
-            }else{
-                if(!(data in ele.type)) {
-                    return `${type} address pincode is missing`
-                }
-                if(typeof (data)!="number"){
-                    return `pincode of ${type} address has to be a number`
-                }
-                if(!pinRegex.test(data)){
-                    return `pincode of ${type} address is invalid`
-                }
-            }
-
-        })
-    }
-
-    let message = error("shipping")
-
-
-    if(!(billing in ele)) return "billing address in mandatory"
-
 }
 
 module.exports = {
   userKey,
+  emailRegex
 };
