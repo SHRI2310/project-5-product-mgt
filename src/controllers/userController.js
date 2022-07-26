@@ -11,6 +11,9 @@ const registerUser = async (req, res) => {
     if ((message = valid.userKey(data))) {
       return res.status(400).send({ status: false, message: message });
     }
+    if(!((data.password.length>=8 )&& (data.password.length<=15))){
+        return res.status(400).send({status:false,message:"password must be  between  8-15 characters"})
+    }
     let unique = await userModel
       .findOne({ $or: [{ email: data.email }, { phone: data.phone }] })
       .select({ phone: 1, email: 1, _id: 0 });
@@ -45,7 +48,7 @@ const login = async (req, res) => {
   try {
     let data = req.body;
     let userId = false;
-    if (!(email in data)) {
+    if (!("email" in data)) {
       return res
         .status(400)
         .send({ status: false, message: "email is required" });
@@ -55,7 +58,7 @@ const login = async (req, res) => {
         .status(400)
         .send({ status: false, message: "email isn't valid" });
     }
-    if (!(password in data)) {
+    if (!("password" in data)) {
       return res
         .status(400)
         .send({ status: false, message: "password is required" });
@@ -93,6 +96,9 @@ const login = async (req, res) => {
   }
 };
 
+
+
+
 module.exports = {
-  registerUser,
+  registerUser,login
 };
