@@ -14,7 +14,7 @@ const auth = async (req, res, next) => {
         .send({ status: false, message: "userId in params isn't valid" });
     }
 
-    jwt.verify(token, "Group19", async (err, payload) => {
+    jwt.verify(token, "Group19", /*async*/ (err, payload) => {
       if (err) {
         return res
           .status(401)
