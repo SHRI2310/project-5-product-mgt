@@ -192,7 +192,7 @@ Send [form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData)
   currencyId: {string, mandatory, INR},
   currencyFormat: {string, mandatory, Rupee symbol},
   isFreeShipping: {boolean, default: false},
-  productImage: {string, mandatory},  // s3 link
+  # productImage: {string, mandatory},  // s3 link
   style: {string},
   availableSizes: {array of string, at least one size, enum["S", "XS","M","X", "L","XXL", "XL"]},
   installments: {number},

@@ -17,7 +17,7 @@ let uploadFile = async (file) => {
     let uploadParams = {
       ACL: "public-read",
       Bucket: "classroom-training-bucket",
-      Key: "group19/" + file.originalname + new Date(), 
+      Key: "group19/" + file.originalname + new Date(),
       Body: file.buffer,
     };
     s3.upload(uploadParams, function (err, data) {
@@ -31,7 +31,7 @@ let uploadFile = async (file) => {
 
 const registerUser = async (req, res) => {
   try {
-    let data = JSON.parse(JSON.stringify(req.body.data));
+    let data = JSON.parse(JSON.stringify(req.body));
     let message;
 
     if ((message = valid.createUser(data))) {
@@ -66,13 +66,17 @@ const registerUser = async (req, res) => {
     await bcrypt.hash(data.password, 10).then(function (hash) {
       data.password = hash;
     });
-
+    if (!req.files) {
+      return res
+        .status(400)
+        .send({ status: false, message: "profileImage is missing" });
+    }
     if ((message = valid.profileImage(req.files))) {
       return res.status(400).send({ status: false, message: message });
     }
-    
+
     // data.profileImage = await uploadFile(req.files[0])
-    
+
     let result = await userModel.create(data);
     res.status(201).send({ status: true, message: result });
   } catch (err) {

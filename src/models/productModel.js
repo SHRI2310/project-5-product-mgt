@@ -30,13 +30,14 @@ const ProductSchema = new mongoose.Schema( {
       type: Boolean,
       default: false,
     },
-    productImage: {
-      type: String,
-      required: true,
-    },
+    // productImage: {
+    //   type: String,
+    //   required: true,
+    // },
     style: { type: String, trim: true },
     availableSizes: {
-      type: [{enum: ["S", "XS", "M", "X", "L", "XXL", "XL"]}],
+      type: [String],
+      enum: ["S", "XS", "M", "X", "L", "XXL", "XL"],
       required: true
     },
     installments: { type: Number },
@@ -44,3 +45,5 @@ const ProductSchema = new mongoose.Schema( {
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true })
+
+  module.exports = mongoose.model("Product",ProductSchema)
