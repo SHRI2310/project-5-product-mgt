@@ -113,13 +113,13 @@ function createProduct(body) {
           body["availableSizes"] = body["availableSizes"].split();
           return;
         }
-        if (typeof body["availableSizes"] == "object") return;
+        if (Array.isArray(body["availableSizes"])) return;
         return "availableSizes can only be a string or an array of strings";
       }
 
       if (x == "price") {
-        if (typeof body[x] != "number") return `price must be a number`;
         if (body[x] <= 0) return `price must be a positive number`;
+        body[x] = Number(body[x])
         return;
       }
 
@@ -138,9 +138,6 @@ function createProduct(body) {
 
   if (error) return error;
 
-  if (!Array.isArray(body["availableSizes"]))
-    return "availableSizes should be an array or string";
-
   if (!body["availableSizes"].length)
     return "availableSizes array can't be empty";
 
@@ -152,8 +149,11 @@ function createProduct(body) {
     }
   }
 
+  if (!body["availableSizes"].length)
+  return "availableSizes array doesn't have any valid size";
+
   if ("isFreeShipping" in body) {
-    if (body["isFreeShipping"] != "boolean")
+    if (typeof body["isFreeShipping"] != "boolean")
       return `isFreeShipping must be a boolean value`;
   }
   if ("installments" in body) {
@@ -175,6 +175,9 @@ let filters = [
 ];
 
 function getProducts(query) {
+
+  if (JSON.stringify(query) == "{}") return
+
   for (let key in query) {
     if (!filters.includes(key)) {
       delete query[key];
@@ -236,6 +239,11 @@ function getProducts(query) {
     }else{
       query["$and"].push({price:{$lte:query["priceLessThan"]}})
       delete query["priceLessThan"]
+    }
+  }
+  if("priceSort" in query){
+    if(!(query["priceSort"]==1 || query["priceSort"]==-1)){
+      return "priceSort filter should be a number equal to 1 or -1"
     }
   }
 }
