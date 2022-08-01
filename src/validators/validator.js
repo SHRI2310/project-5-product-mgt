@@ -45,7 +45,49 @@ function createUser(body) {
   if (error) return error;
 }
 
-function address(ele) {}
+function address(ele) {
+  
+  let arr = ["shipping","billing"]
+  let arr1 = ["street","city","pincode"]
+
+  if(!(typeof ele =="object" && (Array.isArray(ele)!=true) && ele!=null)){
+    return `address must be an object`
+  }
+  
+  let error = arr.map(x=>{  
+
+    if(!(x in ele)){
+      return `${x} address is missing in address`
+    }
+
+    if(!(typeof ele[x] =="object" && (Array.isArray(ele[x])!=true) && ele[x]!=null)){
+      return `${x} address must be an object`
+    }
+
+    return arr1.map(y=>{
+      if(!(y in ele[x])){
+        return `${y} in ${x} address is missing`
+      }
+      if(y=="pincode"){
+        if(!pinRegex.test(ele[x][y])){
+          return "pincode isn't valid"
+        }
+        ele[x][y] = parseInt(ele[x][y])
+        return
+      }
+      if(typeof ele[x][y]!="string"){
+        return `${y} in ${x} address must be a string`
+      }
+      ele[x][y] = ele[x][y].trim()
+      if(ele[x][y].length==0){
+        return `${y} in ${x} address can't be empty`
+      }
+    }).find(x=>x!=undefined)
+
+  }).find(x=> x!=undefined)
+
+  if(error) return error
+}
 
 function updateUser(body) {
   if (JSON.stringify(body) == "{}") return "request body cannot be empty";
@@ -119,7 +161,7 @@ function createProduct(body) {
 
       if (x == "price") {
         if (body[x] <= 0) return `price must be a positive number`;
-        body[x] = Number(body[x])
+        body[x] = Number(body[x]);
         return;
       }
 
@@ -150,7 +192,7 @@ function createProduct(body) {
   }
 
   if (!body["availableSizes"].length)
-  return "availableSizes array doesn't have any valid size";
+    return "availableSizes array doesn't have any valid size";
 
   if ("isFreeShipping" in body) {
     if (typeof body["isFreeShipping"] != "boolean")
@@ -175,8 +217,7 @@ let filters = [
 ];
 
 function getProducts(query) {
-
-  if (JSON.stringify(query) == "{}") return
+  if (JSON.stringify(query) == "{}") return;
 
   for (let key in query) {
     if (!filters.includes(key)) {
@@ -223,30 +264,117 @@ function getProducts(query) {
     if (!positive.test(query["priceGreaterThan"])) {
       return "priceGreaterThan should be a whole number";
     }
-    query["$and"] = [{price:{$gte:query["priceGreaterThan"]}}]
-    delete query["priceGreaterThan"]
+    query["$and"] = [{ price: { $gte: query["priceGreaterThan"] } }];
+    delete query["priceGreaterThan"];
   }
   if ("priceLessThan" in query) {
     if (!positive.test(query["priceLessThan"])) {
       return "priceLessThan must be a natural number";
     }
-    if(query["priceLessThan"]==0){
-      return "priceLessThan filter must be greater than zero"
+    if (query["priceLessThan"] == 0) {
+      return "priceLessThan filter must be greater than zero";
     }
-    if(!query["$and"]){
-      query["$and"] = [{price:{$lte:query["priceLessThan"]}}]
-      delete query["priceLessThan"]
-    }else{
-      query["$and"].push({price:{$lte:query["priceLessThan"]}})
-      delete query["priceLessThan"]
+    if (!query["$and"]) {
+      query["$and"] = [{ price: { $lte: query["priceLessThan"] } }];
+      delete query["priceLessThan"];
+    } else {
+      query["$and"].push({ price: { $lte: query["priceLessThan"] } });
+      delete query["priceLessThan"];
     }
   }
-  if("priceSort" in query){
-    if(!(query["priceSort"]==1 || query["priceSort"]==-1)){
-      return "priceSort filter should be a number equal to 1 or -1"
+  if ("priceSort" in query) {
+    if (!(query["priceSort"] == 1 || query["priceSort"] == -1)) {
+      return "priceSort filter should be a number equal to 1 or -1";
     }
   }
 }
+
+function updateProduct(body) {
+  if (JSON.stringify(body) == "{}") return "request body cannot be empty";
+
+  body["currencyFormat"] = "₹";
+  let check = 0;
+
+  if ("style" in body) productFields.push("style");
+
+  let error = productFields
+    .map((x) => {
+      if (x in body) {
+        check++;
+
+        if (x == "availableSizes") {
+          if (typeof body["availableSizes"] == "string") {
+            body["availableSizes"] = body["availableSizes"].split();
+            return;
+          }
+          if (Array.isArray(body["availableSizes"])) return;
+          return "availableSizes can only be a string or an array of strings";
+        }
+
+        if (x == "price") {
+          if (body[x] <= 0) return `price must be a positive number`;
+          body[x] = Number(body[x]);
+          return;
+        }
+
+        if (typeof body[x] != "string") return `${x} should must be a string`;
+
+        body[x] = body[x].trim();
+        let key = body[x];
+
+        if (!key.length) return `${x} can't be empty`;
+
+        if (x == "currencyId") {
+          if (body[x] != "INR") return `${x} must be in "INR" format`;
+        }
+      }
+    })
+    .find((x) => x != undefined);
+
+  if (error) return error;
+
+  if ("availableSizes" in body) {
+    if (!body["availableSizes"].length) {
+      return "availableSizes array can't be empty";
+    }
+    let len = body["availableSizes"].length;
+
+    for (let i = len - 1; i >= 0; i--) {
+      if (!productSize.includes(body["availableSizes"][i])) {
+        body["availableSizes"].splice(i, 1);
+      }
+    }
+
+    if (!body["availableSizes"].length) {
+      return "availableSizes array doesn't have any valid size";
+    }
+    body["$addToSet"] = { availableSizes: { $each: body["availableSizes"] } };
+    delete body["availableSizes"];
+    check++;
+  }
+  if ("isFreeShipping" in body) {
+    if (typeof body["isFreeShipping"] != "boolean") {
+      return `isFreeShipping must be a boolean value`;
+    }
+    check++;
+  }
+  if ("installments" in body) {
+    if (typeof body["installments"] != "number") {
+      return "installments must be a number";
+    }
+    if (body["installments"] <= 0) {
+      return "installments must be greater than zero";
+    }
+    if (!positive.test(body["installments"])) {
+      return "installment count must be a natural number";
+    }
+    check++;
+  }
+  if (!check) {
+    return "The data you sent isn't valid";
+  }
+}
+
 function profileImage(arr) {
   if (!arr.length) return "profileImage file is missing";
   let check = false;
@@ -280,7 +408,9 @@ module.exports = {
   updateUser,
   createProduct,
   profileImage,
-  getProducts
+  getProducts,
+  updateProduct,
+  address
 };
 
 // if ("size" in query) {

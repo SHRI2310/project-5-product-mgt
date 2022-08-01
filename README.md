@@ -197,7 +197,7 @@ Send [form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData)
   availableSizes: {array of string, at least one size, enum["S", "XS","M","X", "L","XXL", "XL"]},
   installments: {number},
   deletedAt: {Date, when the document is deleted}, 
-  isDeleted: {boolean, default: false},
+  isDeleted: {boolean, default: true},
   createdAt: {timestamp},
   updatedAt: {timestamp},
 }

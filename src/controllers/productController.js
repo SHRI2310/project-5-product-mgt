@@ -85,20 +85,79 @@ const getProductById = async (req, res) => {
   }
 };
 
-const updateProduct = async (req,res) => {
+const updateProduct = async (req, res) => {
+  try {
+    let productId = req.params.productId;
+    let data = req.body;
+    let message;
 
-  try{
-    let productId = req.params.productId
-    let data = req.body
-  }catch(err){
-    console.log(err.message)
-    res.status(500).send({status:false,message:err.message})
+    if (!valid.id(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "productId in params isn't valid" });
+    }
+    if ((message = valid.updateProduct(data))) {
+      return res.status(400).send({ status: false, message: message });
+    }
+    let result = await productModel.findOneAndUpdate(
+      { _id: productId, isDeleted: false },
+      data,
+      { new: true }
+    );
+    if (!result) {
+      return res.status(404).send({
+        status: false,
+        message: "No produt with this id or already deleted",
+      });
+    }
+    return res
+      .status(200)
+      .send({ status: true, message: "Success", data: result });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({ status: false, message: err.message });
   }
+};
 
-}
+const deleteProduct = async (req, res) => {
+  try {
+    let productId = req.params.productId;
+
+    if (!valid.id(productId)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "product Id in params isn't valid" });
+    }
+    let result = await productModel.findByIdAndUpdate(productId, {
+      isDeleted: true,
+    });
+    if (!result) {
+      return res
+        .status(404)
+        .send({ status: false, message: "There is no product with this id" });
+    }
+    if (result.isDeleted) {
+      return res
+        .status(200)
+        .send({
+          status: true,
+          message: "The product is already marked as deleted",
+        });
+    }
+    return res.status(202).send({
+      status: true,
+      message: "The product has been deleted successfully",
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send({ status: false, message: err.message });
+  }
+};
 
 module.exports = {
   createProduct,
   getProduct,
-  getProductById
+  getProductById,
+  updateProduct,
+  deleteProduct,
 };

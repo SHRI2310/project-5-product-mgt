@@ -43,6 +43,9 @@ const registerUser = async (req, res) => {
         message: "password must be  between  8-15 characters",
       });
     }
+    if(message = valid.address(data["address"])){
+      return res.status(400).send({status:false,message:message})
+    }
 
     let unique = await userModel
       .findOne({ $or: [{ email: data.email }, { phone: data.phone }] })
@@ -66,14 +69,14 @@ const registerUser = async (req, res) => {
     await bcrypt.hash(data.password, 10).then(function (hash) {
       data.password = hash;
     });
-    if (!req.files) {
-      return res
-        .status(400)
-        .send({ status: false, message: "profileImage is missing" });
-    }
-    if ((message = valid.profileImage(req.files))) {
-      return res.status(400).send({ status: false, message: message });
-    }
+    // if (!req.files) {
+    //   return res
+    //     .status(400)
+    //     .send({ status: false, message: "profileImage is missing" });
+    // }
+    // if ((message = valid.profileImage(req.files))) {
+    //   return res.status(400).send({ status: false, message: message });
+    // }
 
     // data.profileImage = await uploadFile(req.files[0])
 
