@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const cartModel = require("../models/cartModel")
 
 let userFields = ["fname", "lname", "email", "phone", "password", "address"];
 let nameRegex = /^[A-Za-z]+$/;
@@ -46,47 +47,54 @@ function createUser(body) {
 }
 
 function address(ele) {
-  
-  let arr = ["shipping","billing"]
-  let arr1 = ["street","city","pincode"]
+  let arr = ["shipping", "billing"];
+  let arr1 = ["street", "city", "pincode"];
 
-  if(!(typeof ele =="object" && (Array.isArray(ele)!=true) && ele!=null)){
-    return `address must be an object`
+  if (!(typeof ele == "object" && Array.isArray(ele) != true && ele != null)) {
+    return `address must be an object`;
   }
-  
-  let error = arr.map(x=>{  
 
-    if(!(x in ele)){
-      return `${x} address is missing in address`
-    }
-
-    if(!(typeof ele[x] =="object" && (Array.isArray(ele[x])!=true) && ele[x]!=null)){
-      return `${x} address must be an object`
-    }
-
-    return arr1.map(y=>{
-      if(!(y in ele[x])){
-        return `${y} in ${x} address is missing`
+  let error = arr
+    .map((x) => {
+      if (!(x in ele)) {
+        return `${x} address is missing in address`;
       }
-      if(y=="pincode"){
-        if(!pinRegex.test(ele[x][y])){
-          return "pincode isn't valid"
-        }
-        ele[x][y] = parseInt(ele[x][y])
-        return
-      }
-      if(typeof ele[x][y]!="string"){
-        return `${y} in ${x} address must be a string`
-      }
-      ele[x][y] = ele[x][y].trim()
-      if(ele[x][y].length==0){
-        return `${y} in ${x} address can't be empty`
-      }
-    }).find(x=>x!=undefined)
 
-  }).find(x=> x!=undefined)
+      if (
+        !(
+          typeof ele[x] == "object" &&
+          Array.isArray(ele[x]) != true &&
+          ele[x] != null
+        )
+      ) {
+        return `${x} address must be an object`;
+      }
 
-  if(error) return error
+      return arr1
+        .map((y) => {
+          if (!(y in ele[x])) {
+            return `${y} in ${x} address is missing`;
+          }
+          if (y == "pincode") {
+            if (!pinRegex.test(ele[x][y])) {
+              return "pincode isn't valid";
+            }
+            ele[x][y] = parseInt(ele[x][y]);
+            return;
+          }
+          if (typeof ele[x][y] != "string") {
+            return `${y} in ${x} address must be a string`;
+          }
+          ele[x][y] = ele[x][y].trim();
+          if (ele[x][y].length == 0) {
+            return `${y} in ${x} address can't be empty`;
+          }
+        })
+        .find((x) => x != undefined);
+    })
+    .find((x) => x != undefined);
+
+  if (error) return error;
 }
 
 function updateUser(body) {
@@ -396,6 +404,93 @@ function profileImage(arr) {
   if (!ele) return "the format of profileImage is invalid";
 }
 
+let cartItems = ["userId", "items"];
+async function createCart(body) {
+  if (JSON.stringify(body) == "{}") {
+    return "cartBody can't be empty";
+  }
+
+  let error = cartItems
+    .map((x) => {
+      if (!(x in body)) {
+        return `${x} is missing in cartBody`;
+      }
+      if (x == "userId") {
+        if (id(body[x])) return;
+        return "userId in request body isn't valid";
+      }
+      if (x == "items") {
+        if (!Array.isArray(body[x])) {
+          return "items in request body has to be an array";
+        }
+        if (body[x].length == 0) {
+          return "please add some items to create a cart";
+        }
+        return;
+      }
+    })
+    .find((x) => x != undefined);
+
+  if (error) return error;
+
+  let len = body["items"].length - 1;
+
+  function checkObject(ele) {
+    if (typeof ele == "object" && Array.isArray(ele) != true && ele != null) {
+      return true;
+    }
+    return false;
+  }
+  body["products"] = {};
+
+  for (let i = len; i >= 0; i--) {
+    let item = body["items"][i];
+
+    if (checkObject(item)) {
+      if (!("productId" in item)) {
+        return `productId is missing in the item at index ${i}`;
+      }
+      if (!id(item["productId"])) {
+        return `productId of the item at index ${i} is not valid`;
+      }
+      if (!("quantity" in item)) {
+        return `quantity is missing in item at index ${i}`;
+      }
+      if (typeof item["quantity"] != "number") {
+        return `quantity of item at index ${i} is not a number`;
+      }
+      if (item["quantity"] > 0) {
+        if (!positive.test(item["quantity"])) {
+          return `quantity of item at index ${i} can't be in decimals`;
+        }
+        if (item["productId"] in body["products"]) {
+          body["products"][item["productId"]] += item["quantity"];
+        } else {
+          body["products"][item["productId"]] = item["quantity"];
+        }
+      } else {
+        return `quantity of item at index ${i} has to be a positive number`;
+      }
+    } else {
+      body["items"].splice(i, 1);
+    }
+  }
+  if (body["items"].length == 0) {
+    return "the format of the product isn't valid";
+  }
+  delete body["items"];
+
+  /* DON'T FOCUS ON THIS LINE FOR NOW
+  let result  = Object.keys(body["products"])
+
+  return await  cartModel.find({$in:{_id:result},isDeleted:false})
+
+  if(!output.length){
+    return "no products with these id or already deleted"
+  }
+  */
+}
+
 function id(id) {
   if (mongoose.isValidObjectId(id) && id.length == 24) return true;
   return false;
@@ -410,14 +505,6 @@ module.exports = {
   profileImage,
   getProducts,
   updateProduct,
-  address
+  address,
+  createCart,
 };
-
-// if ("size" in query) {
-//   if (typeof query.size == "string") {
-//     if (!productSize.includes(query.size)) {
-//       return "please provide a valid size in the filters";
-//     }
-//   } else if (Array.isArray(query.size)) {
-//   } else return "size filter accepts array or string";
-// }
