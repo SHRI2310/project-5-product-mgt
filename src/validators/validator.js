@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const cartModel = require("../models/cartModel")
+const cartModel = require("../models/cartModel");
 
 let userFields = ["fname", "lname", "email", "phone", "password", "address"];
 let nameRegex = /^[A-Za-z]+$/;
@@ -404,91 +404,34 @@ function profileImage(arr) {
   if (!ele) return "the format of profileImage is invalid";
 }
 
-let cartItems = ["userId", "items"];
-async function createCart(body) {
+function createCart(body) {
   if (JSON.stringify(body) == "{}") {
     return "cartBody can't be empty";
   }
-
-  let error = cartItems
-    .map((x) => {
-      if (!(x in body)) {
-        return `${x} is missing in cartBody`;
-      }
-      if (x == "userId") {
-        if (id(body[x])) return;
-        return "userId in request body isn't valid";
-      }
-      if (x == "items") {
-        if (!Array.isArray(body[x])) {
-          return "items in request body has to be an array";
-        }
-        if (body[x].length == 0) {
-          return "please add some items to create a cart";
-        }
-        return;
-      }
-    })
-    .find((x) => x != undefined);
-
-  if (error) return error;
-
-  let len = body["items"].length - 1;
-
-  function checkObject(ele) {
-    if (typeof ele == "object" && Array.isArray(ele) != true && ele != null) {
-      return true;
-    }
-    return false;
+  if (!("productId" in body)) {
+    return "productId is required to create a cart";
   }
-  body["products"] = {};
-
-  for (let i = len; i >= 0; i--) {
-    let item = body["items"][i];
-
-    if (checkObject(item)) {
-      if (!("productId" in item)) {
-        return `productId is missing in the item at index ${i}`;
-      }
-      if (!id(item["productId"])) {
-        return `productId of the item at index ${i} is not valid`;
-      }
-      if (!("quantity" in item)) {
-        return `quantity is missing in item at index ${i}`;
-      }
-      if (typeof item["quantity"] != "number") {
-        return `quantity of item at index ${i} is not a number`;
-      }
-      if (item["quantity"] > 0) {
-        if (!positive.test(item["quantity"])) {
-          return `quantity of item at index ${i} can't be in decimals`;
-        }
-        if (item["productId"] in body["products"]) {
-          body["products"][item["productId"]] += item["quantity"];
-        } else {
-          body["products"][item["productId"]] = item["quantity"];
-        }
-      } else {
-        return `quantity of item at index ${i} has to be a positive number`;
-      }
-    } else {
-      body["items"].splice(i, 1);
+  if(!id(body["productId"])){
+    return `productId in request body isn't valid`
+  }
+  if (!("quantity" in body)) {
+    return `quantity of the product is required`;
+  }
+  if (typeof body["quantity"] != "number") {
+    return `quantity of item at index ${i} is not a number`;
+  }
+  if (body["quantity"] > 0) {
+    if (!positive.test(body["quantity"])) {
+      return "quantity of a product can't be in decimals"
+    }
+  } else {
+    return `quantity of the product has to be a positive number`;
+  }
+  if("cartId" in body){
+    if(!id(body["cartId"])){
+      return `cartId in request body isn't valid`
     }
   }
-  if (body["items"].length == 0) {
-    return "the format of the product isn't valid";
-  }
-  delete body["items"];
-
-  /* DON'T FOCUS ON THIS LINE FOR NOW
-  let result  = Object.keys(body["products"])
-
-  return await  cartModel.find({$in:{_id:result},isDeleted:false})
-
-  if(!output.length){
-    return "no products with these id or already deleted"
-  }
-  */
 }
 
 function id(id) {
@@ -508,3 +451,70 @@ module.exports = {
   address,
   createCart,
 };
+
+// Saved for later
+
+// if (!("items" in body)) {
+//   return `items is missing in cartBody`;
+// }
+// if (!Array.isArray(body["items"])) {
+//   return "items in request body has to be an array";
+// }
+// if (body["items"].length == 0) {
+//   return "please add some items to create a cart";
+// }
+
+// let len = body["items"].length - 1;
+
+// function checkObject(ele) {
+//   if (typeof ele == "object" && Array.isArray(ele) != true && ele != null) {
+//     return true;
+//   }
+//   return false;
+// }
+// body["products"] = {};
+
+// for (let i = len; i >= 0; i--) {
+//   let item = body["items"][i];
+
+//   if (checkObject(item)) {
+//     if (!("productId" in item)) {
+//       return `productId is missing in the item at index ${i}`;
+//     }
+//     if (!id(item["productId"])) {
+//       return `productId of the item at index ${i} is not valid`;
+//     }
+//     if (!("quantity" in item)) {
+//       return `quantity is missing in item at index ${i}`;
+//     }
+//     if (typeof item["quantity"] != "number") {
+//       return `quantity of item at index ${i} is not a number`;
+//     }
+//     if (item["quantity"] > 0) {
+//       if (!positive.test(item["quantity"])) {
+//         return `quantity of item at index ${i} can't be in decimals`;
+//       }
+//       if (item["productId"] in body["products"]) {
+//         body["products"][item["productId"]] += item["quantity"];
+//       } else {
+//         body["products"][item["productId"]] = item["quantity"];
+//       }
+//     } else {
+//       return `quantity of item at index ${i} has to be a positive number`;
+//     }
+//   }
+// }
+// if (!Object.keys(body["products"].length)) {
+//   return "the format of the product isn't valid";
+// }
+// delete body["items"];
+
+// /* DON'T FOCUS ON THIS LINE FOR NOW
+// let result  = Object.keys(body["products"])
+
+// return await  cartModel.find({$in:{_id:result},isDeleted:false})
+
+// if(!output.length){
+//   return "no products with these id or already deleted"
+// }
+// */
