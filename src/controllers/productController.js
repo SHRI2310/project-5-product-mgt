@@ -9,6 +9,15 @@ const createProduct = async (req, res) => {
     if ((message = valid.createProduct(data))) {
       return res.status(400).send({ status: false, message: message });
     }
+    let product = await productModel.findOne({ title: data.title });
+
+    if (product) {
+      return res.status(409).send({
+        status: false,
+        message: "A product with the same title already exists",
+      });
+    }
+
     let result = await productModel.create(data);
     res.status(201).send({ status: true, message: result });
   } catch (err) {
@@ -99,6 +108,18 @@ const updateProduct = async (req, res) => {
     if ((message = valid.updateProduct(data))) {
       return res.status(400).send({ status: false, message: message });
     }
+    if ("title" in data) {
+      let product = await productModel.findOne({ title: data.title });
+      if (product) {
+        return res
+          .status(409)
+          .send({
+            status: false,
+            message: "a product with this title already exists",
+          });
+      }
+    }
+
     let result = await productModel.findOneAndUpdate(
       { _id: productId, isDeleted: false },
       data,
@@ -137,12 +158,10 @@ const deleteProduct = async (req, res) => {
         .send({ status: false, message: "There is no product with this id" });
     }
     if (result.isDeleted) {
-      return res
-        .status(200)
-        .send({
-          status: true,
-          message: "The product is already marked as deleted",
-        });
+      return res.status(200).send({
+        status: true,
+        message: "The product is already marked as deleted",
+      });
     }
     return res.status(202).send({
       status: true,

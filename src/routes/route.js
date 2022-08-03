@@ -22,4 +22,9 @@ router.post("/users/:userId/cart",auth.auth,cartController.createCart)
 router.get("/users/:userId/cart",auth.auth,cartController.getCart)
 router.delete("/users/:userId/cart",auth.auth,cartController.deleteCart)
 
+//INVALID ROUTES WILL BE HANDLED HERE
+router.all("*", function (req, res) {
+    res.status(404).send({ status: false, message: "you're on a wrong route" });
+  });
+
 module.exports = router

@@ -43,8 +43,8 @@ const registerUser = async (req, res) => {
         message: "password must be  between  8-15 characters",
       });
     }
-    if(message = valid.address(data["address"])){
-      return res.status(400).send({status:false,message:message})
+    if ((message = valid.address(data["address"]))) {
+      return res.status(400).send({ status: false, message: message });
     }
 
     let unique = await userModel
@@ -173,6 +173,11 @@ const updateUser = async (req, res) => {
           status: false,
           message: "password must be  between  8-15 characters",
         });
+      }
+    }
+    if ("address" in data) {
+      if ((message = valid.updateAdress(data))) {
+        return res.status(400).send({ status: false, message: message });
       }
     }
     if ("email" in data || "phone" in data) {

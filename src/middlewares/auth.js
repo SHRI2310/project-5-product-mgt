@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
 const valid = require("../validators/validator");
 
 const auth = async (req, res, next) => {

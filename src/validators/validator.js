@@ -103,6 +103,7 @@ function updateUser(body) {
   let error = userFields
     .map((x) => {
       if (x in body) {
+        invalidKey++
         if (x == "address") return;
 
         if (typeof body[x] != "string") return `${x} should must be a string`;
@@ -127,13 +128,88 @@ function updateUser(body) {
         if (x == "phone") {
           if (!phoneRegex.test(key)) return `${x} number is  not valid`;
         }
-      } else invalidKey++;
+      } 
       return false;
     })
     .find((x) => x != undefined && x != false);
 
   if (error) return error;
-  if (invalidKey == 6) return "The data sent you is invalid";
+  if (!invalidKey) return "The data sent you is invalid";
+}
+
+function updateAdress(body) {
+  try {
+    if (
+      !(
+        typeof body["address"] == "object" &&
+        Array.isArray(body["address"]) != true &&
+        body["address"] != null
+      )
+    ) {
+      return `address must be an object`;
+    }
+    if (!("shipping" in body["address"] || "billing" in body["address"])) {
+      return `either shipping or billing address is required for update`;
+    }
+    let fields = ["shipping", "billing"];
+    let error = fields
+      .map((x) => {
+        if (x in body["address"]) {
+          if (
+            !(
+              typeof body["address"][x] == "object" &&
+              Array.isArray(body["address"][x]) != true &&
+              body["address"][x] != null
+            )
+          ) {
+            return `${x} address must be an object`;
+          }
+          if (
+            !(
+              "city" in body["address"][x] ||
+              "street" in body["address"][x] ||
+              "pincode" in body["address"][x]
+            )
+          ) {
+            return `${x} address needs to have atleast one valid thing to update; city, street, pincode`;
+          }
+          if ("city" in body["address"][x]) {
+            if (typeof body["address"][x]["city"] != "string") {
+              return ` city in ${x} address should be a string`;
+            }
+            body["address"][x]["city"] = body["address"][x]["city"].trim();
+            if (!body["address"][x]["city"].length) {
+              return ` city in ${x} address can't be empty`;
+            }
+            body[`address.${x}.city`] = body["address"][x]["city"];
+          }
+          if ("street" in body["address"][x]) {
+            if (typeof body["address"][x]["street"] != "string") {
+              return ` street in ${x} address should be a string`;
+            }
+            body["address"][x]["street"] = body["address"][x]["street"].trim();
+            if (!body["address"][x]["street"].length) {
+              return ` street in ${x} address can't be empty`;
+            }
+            body[`address.${x}.street`] = body["address"][x]["street"];
+          }
+          if ("pincode" in body["address"][x]) {
+            if (!pinRegex.test(body["address"][x]["pincode"])) {
+              return ` pincode in ${x} address isn't valid`;
+            }
+            body[`address.${x}.pincode`] = parseInt(
+              body["address"][x]["pincode"]
+            );
+          }
+        }
+      })
+      .find((x) => x != undefined);
+    if (error) return error;
+    delete body["address"]
+  } catch (err) {
+    console.log(err.message);
+    return err.message;
+  }
 }
 
 //PRODUCT VALIDATIONS
@@ -411,8 +487,8 @@ function createCart(body) {
   if (!("productId" in body)) {
     return "productId is required to create a cart";
   }
-  if(!id(body["productId"])){
-    return `productId in request body isn't valid`
+  if (!id(body["productId"])) {
+    return `productId in request body isn't valid`;
   }
   if (!("quantity" in body)) {
     return `quantity of the product is required`;
@@ -422,14 +498,14 @@ function createCart(body) {
   }
   if (body["quantity"] > 0) {
     if (!positive.test(body["quantity"])) {
-      return "quantity of a product can't be in decimals"
+      return "quantity of a product can't be in decimals";
     }
   } else {
     return `quantity of the product has to be a positive number`;
   }
-  if("cartId" in body){
-    if(!id(body["cartId"])){
-      return `cartId in request body isn't valid`
+  if ("cartId" in body) {
+    if (!id(body["cartId"])) {
+      return `cartId in request body isn't valid`;
     }
   }
 }
@@ -450,6 +526,7 @@ module.exports = {
   updateProduct,
   address,
   createCart,
+  updateAdress,
 };
 
 // Saved for later
