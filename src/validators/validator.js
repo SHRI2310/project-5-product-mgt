@@ -103,7 +103,7 @@ function updateUser(body) {
   let error = userFields
     .map((x) => {
       if (x in body) {
-        invalidKey++
+        invalidKey++;
         if (x == "address") return;
 
         if (typeof body[x] != "string") return `${x} should must be a string`;
@@ -128,7 +128,7 @@ function updateUser(body) {
         if (x == "phone") {
           if (!phoneRegex.test(key)) return `${x} number is  not valid`;
         }
-      } 
+      }
       return false;
     })
     .find((x) => x != undefined && x != false);
@@ -205,7 +205,7 @@ function updateAdress(body) {
       })
       .find((x) => x != undefined);
     if (error) return error;
-    delete body["address"]
+    delete body["address"];
   } catch (err) {
     console.log(err.message);
     return err.message;
@@ -510,6 +510,26 @@ function createCart(body) {
   }
 }
 
+function updateCart(body) {
+  try {
+    if (!("productId" in body)) {
+      return `productId is missing in request body`;
+    }
+    if (!id(body.productId)) {
+      return "productId in request body isn't valid";
+    }
+    if (!("removeProduct" in body)) {
+      return `removeProductKey is missing in request body`;
+    }
+    if(body["removeProduct"]!=0 && body["removeProduct"]!=1){
+      return "removeProduct can only have the value 0 & 1"
+    }
+  } catch (err) {
+    console.log(err.message);
+    return err.message;
+  }
+}
+
 function id(id) {
   if (mongoose.isValidObjectId(id) && id.length == 24) return true;
   return false;
@@ -527,6 +547,7 @@ module.exports = {
   address,
   createCart,
   updateAdress,
+  updateCart,
 };
 
 // Saved for later
