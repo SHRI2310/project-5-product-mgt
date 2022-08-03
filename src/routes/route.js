@@ -18,6 +18,8 @@ router.put("/products/:productId",productController.updateProduct)
 router.delete("/products/:productId",productController.deleteProduct)
 
 // CART APIS
-router.post("/:userId/cart",cartController.createCart)
+router.post("/users/:userId/cart",auth.auth,cartController.createCart)
+router.get("/users/:userId/cart",auth.auth,cartController.getCart)
+router.delete("/users/:userId/cart",auth.auth,cartController.deleteCart)
 
 module.exports = router
