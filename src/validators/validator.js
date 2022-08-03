@@ -418,7 +418,7 @@ function createCart(body) {
     return `quantity of the product is required`;
   }
   if (typeof body["quantity"] != "number") {
-    return `quantity of item at index ${i} is not a number`;
+    return `quantity of the item is not a number`;
   }
   if (body["quantity"] > 0) {
     if (!positive.test(body["quantity"])) {
