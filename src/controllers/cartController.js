@@ -44,18 +44,23 @@ const createCart = async (req, res) => {
         .send({ status: false, message: "there is no prodcut with this id" });
     }
     if (cart) {
-      let cartItems = cart["items"];
+      let cartItems = [...cart["items"]];
 
       if (cartItems.length == 0) {
         cartItems.push(({ productId, quantity } = data));
       } else {
-        for (let i = 0; i < cartItems.length; i++) {
+        for (let i = cartItems.length-1; i >= 0; i--) {
           if (cartItems[i]["productId"] == data["productId"]) {
             cartItems[i]["quantity"] += data["quantity"];
-            break;
+            break
+          }
+          console.log(i)
+          if(i==0){
+            cartItems.push(({ productId, quantity } = data))
           }
         }
       }
+      cart["items"] = cartItems
       let newPrice = cart["totalPrice"] + product["price"] * data["quantity"];
       let newItems = cart["totalItems"] + data["quantity"];
       let result = await cartModel.findByIdAndUpdate(
@@ -67,7 +72,9 @@ const createCart = async (req, res) => {
         },
         { new: true }
       );
-      return res.status(200).send({ status: true, message:"Sucess",data:result });
+      return res
+        .status(200)
+        .send({ status: true, message: "Sucess", data: result });
     } else {
       let items = [({ productId, quantity } = data)];
       let totalPrice = product["price"] * data["quantity"];
@@ -77,7 +84,9 @@ const createCart = async (req, res) => {
         totalPrice,
         totalItems: data["quantity"],
       });
-      return res.status(201).send({ status: true, message:"Success",data: result });
+      return res
+        .status(201)
+        .send({ status: true, message: "Success", data: result });
     }
   } catch (err) {
     console.log(err.message);
@@ -147,16 +156,27 @@ const updateCart = async (req, res) => {
     let cartItems = cart["items"];
 
     let existingProduct;
-    for (let i = 0; i < cartItems.length; i++) {
+    for (let i = cartItems.length - 1; i >= 0; i--) {
       if (cartItems[i]["productId"] == data["productId"]) {
         if (data["removeProduct"]) {
-          console.log(cartItems[i]);
-          if (cartItems[i]["quantity"] == 1) cartItems.slice(i, 1);
-          if (cartItems[i]["quantity"] > 1) cartItems[i]["quantity"]--;
+          if (cartItems[i]["quantity"] == 1) {
+            cartItems.splice(i, 1)
+            cart.totalPrice -= product.price;
+            cart.totalItems--
+          }
+          if (cartItems[i]["quantity"] > 1) {
+            cartItems[i]["quantity"]--;
+            cart.totalPrice -= product.price;
+            cart.totalItems--
+          }
           if (cartItems.length == 0) message = "cart is empty";
         } else {
-          cartItems.slice(i, 1);
-          if (cartItems.length == 0) message = "cart is empty";
+          cart.totalPrice -= product.price*cartItems[i]["quantity"];
+          cart.totalItems -= cartItems[i]["quantity"]
+          cartItems.splice(i, 1);
+          if (cartItems.length == 0){
+             message = "cart is empty";
+          }
         }
         existingProduct = i + 1;
       }
@@ -171,19 +191,17 @@ const updateCart = async (req, res) => {
 
     if (message) {
       let result = await cartModel.findByIdAndDelete(cart._id);
-      return res
-        .status(202)
-        .send({
-          status: true,
-          message:
-            "There was only one product in your cart that's why your cart is deleted",
-          data: result,
-        });
+      return res.status(202).send({
+        status: true,
+        message:
+          "There was only one product in your cart that's why your cart is deleted",
+        data: result,
+      });
     }
 
     let result = await cartModel.findByIdAndUpdate(
       cart._id,
-      { items: cartItems },
+      { items,totalPrice,totalItems }=cart,
       { new: true }
     );
 
