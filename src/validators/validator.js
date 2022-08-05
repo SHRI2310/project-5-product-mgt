@@ -530,6 +530,36 @@ function updateCart(body) {
   }
 }
 
+
+// ORDER VALIDATIONS
+
+function createOrder(body){
+
+  if(JSON.stringify(body)=="{}"){
+    return `request body can't be empty`
+  }
+  if(!("cartId" in body)){
+    return `cartId is missing in request body`
+  }
+  if(!id(body["cartId"])){
+    return `cartId in body is invalid`
+  }
+  if("cancellable" in body){
+    if(typeof body["cancellable"]!="boolean"){
+      return `cancellable in request body must be a boolean value`
+    }
+  }
+  if("status" in body){
+    let arr = ["pending","completed","cancelled"]
+    if(typeof body["status"]!="string"){
+      return `status in request body can't be other than a string`
+    }
+    if(!arr.includes(body["status"])){
+      return `status can only have these values ${arr}`
+    }
+  }
+}
+
 function id(id) {
   if (mongoose.isValidObjectId(id) && id.length == 24) return true;
   return false;
@@ -548,6 +578,7 @@ module.exports = {
   createCart,
   updateAdress,
   updateCart,
+  createOrder
 };
 
 // Saved for later
