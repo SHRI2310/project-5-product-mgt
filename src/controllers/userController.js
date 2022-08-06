@@ -3,6 +3,7 @@ const valid = require("../validators/validator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const aws = require("aws-sdk");
+require("dotenv").config()
 
 aws.config.update({
   accessKeyId: "AKIAY3L35MCRVFM24Q7U",
@@ -107,6 +108,14 @@ const login = async (req, res) => {
         .status(400)
         .send({ status: false, message: "password is required" });
     }
+    if (typeof data.password != "string" || data.password.length<8) {
+      return res
+        .status(400)
+        .send({
+          status: false,
+          message: "password has to be a string with atleast 8 characters",
+        });
+    }
     let user = await userModel.findOne({ email: data.email });
 
     if (!user) {
@@ -125,7 +134,7 @@ const login = async (req, res) => {
         .send({ status: false, message: "password isn't correct" });
     }
 
-    const token = jwt.sign({ userId: userId }, "Group19", { expiresIn: "10d" });
+    const token = jwt.sign({ userId: userId }, process.env.JWT_KEY, { expiresIn: "10d" });
 
     res.status(200).send({
       status: true,
@@ -164,6 +173,8 @@ const updateUser = async (req, res) => {
     let userId = req.params.userId;
     let message;
 
+    if(req.files.length) data.validation = true
+
     if ((message = valid.updateUser(data))) {
       return res.status(400).send({ status: false, message: message });
     }
@@ -174,6 +185,9 @@ const updateUser = async (req, res) => {
           message: "password must be  between  8-15 characters",
         });
       }
+      await bcrypt.hash(data.password, 10).then(function (hash) {
+        data.password = hash;
+      })
     }
     if ("address" in data) {
       if ((message = valid.updateAdress(data))) {

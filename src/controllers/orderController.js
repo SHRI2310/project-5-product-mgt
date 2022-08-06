@@ -3,6 +3,10 @@ const cartModel = require("../models/cartModel");
 const userModel = require("../models/userModel");
 const valid = require("../validators/validator");
 
+/**
+ * @createOrder Creates a new order
+ * @returns {error if there is any}
+ */
 const createOrder = async (req, res) => {
   try {
     let userId = req.params.userId;
@@ -30,21 +34,40 @@ const createOrder = async (req, res) => {
         message: "this cartId doesn't belong to the user who is logged in",
       });
     }
+    if (!cart["items"].length) {
+      return res
+        .status(400)
+        .send({
+          status: false,
+          message: "you don't have any product in your cart to create an order",
+        });
+    }
+
+    let totalQuantity = 0
+    for(let i=0;i<cart.items.length;i++){
+      totalQuantity+=cart.items[i].quantity
+    }
+
     data["userId"] = userId;
     data["items"] = cart["items"];
     data["totalPrice"] = cart["totalPrice"];
-    data["totalQuantity"] = cart[""];
+    data["totalQuantity"] = totalQuantity;
+    data["totalItems"] = cart["items"].length;
     let order = await orderModel.create(data);
 
     res.status(201).send({ status: true, message: "Success", data: order });
 
-    await cartModel.findByIdAndDelete(cart._id);
+    await cartModel.findByIdAndUpdate(cart._id,{items:[],totalItems:0,totalPrice:0});
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ status: false, message: err.message });
   }
 };
 
+/**
+ * @updateOrder Updates the order status
+ * @returns {error if there is any}
+ */
 const updateOrder = async (req, res) => {
   try {
     let data = req.body;
@@ -106,5 +129,5 @@ const updateOrder = async (req, res) => {
 
 module.exports = {
   createOrder,
-  updateOrder
+  updateOrder,
 };

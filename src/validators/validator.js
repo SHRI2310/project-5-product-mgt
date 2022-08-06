@@ -100,6 +100,8 @@ function address(ele) {
 function updateUser(body) {
   if (JSON.stringify(body) == "{}") return "request body cannot be empty";
   let invalidKey = 0;
+  if(body.validation) invalidKey++
+  delete body.validation
   let error = userFields
     .map((x) => {
       if (x in body) {
@@ -195,7 +197,7 @@ function updateAdress(body) {
           }
           if ("pincode" in body["address"][x]) {
             if (!pinRegex.test(body["address"][x]["pincode"])) {
-              return ` pincode in ${x} address isn't valid`;
+              return `pincode in ${x} address isn't valid`;
             }
             body[`address.${x}.pincode`] = parseInt(
               body["address"][x]["pincode"]
@@ -228,6 +230,12 @@ function createProduct(body) {
 
   body["currencyFormat"] = "₹";
 
+  if ("currencyId" in body) {
+    if (body["currencyId"] != "INR")
+      return `currencyId must be in "INR" format`;
+  }
+  body["currencyId"] = "INR";
+
   if ("style" in body) productFields.push("style");
 
   let error = productFields
@@ -255,10 +263,6 @@ function createProduct(body) {
       let key = body[x];
 
       if (!key.length) return `${x} can't be empty`;
-
-      if (x == "currencyId") {
-        if (body[x] != "INR") return `${x} must be in "INR" format`;
-      }
     })
     .find((x) => x != undefined);
 
@@ -275,16 +279,17 @@ function createProduct(body) {
     }
   }
 
-  if (!body["availableSizes"].length)
-    return "availableSizes array doesn't have any valid size";
+  if (!body["availableSizes"].length){
+    return `availableSizes array doesn't have any valid size, it should only contain value from ${productSize}`;
+  }
+
+  body["availableSizes"] = [...new Set(body["availableSizes"])]
 
   if ("isFreeShipping" in body) {
     if (typeof body["isFreeShipping"] != "boolean")
       return `isFreeShipping must be a boolean value`;
   }
   if ("installments" in body) {
-    if (typeof body["installments"] != "number")
-      return "installments must be a number";
     if (body["installments"] <= 0)
       return "installments must be greater than zero";
     if (!positive.test(body["installments"]))
@@ -322,7 +327,8 @@ function getProducts(query) {
     if (!productSize.includes(query.size)) {
       return `please provide a size filter from one of these ${productSize}`;
     }
-    query["availableSizes"] = query.size.split();
+    query["availableSizes"] = {}
+    query["availableSizes"]["$in"] = query.size.split()
     delete query.size;
   }
   if (Array.isArray(query.size)) {
@@ -330,7 +336,8 @@ function getProducts(query) {
     if (!arr.length) {
       return `please provide a size filter from one of these ${productSize}`;
     }
-    query["availableSizes"] = query.size;
+    query["availableSizes"] = {}
+    query["availableSizes"]["$all"] = query.size
     delete query.size;
   }
   if ("name" in query) {
@@ -348,7 +355,7 @@ function getProducts(query) {
     if (!positive.test(query["priceGreaterThan"])) {
       return "priceGreaterThan should be a whole number";
     }
-    query["$and"] = [{ price: { $gte: query["priceGreaterThan"] } }];
+    query["$and"] = [{ price: { $gt: query["priceGreaterThan"] } }];
     delete query["priceGreaterThan"];
   }
   if ("priceLessThan" in query) {
@@ -359,10 +366,10 @@ function getProducts(query) {
       return "priceLessThan filter must be greater than zero";
     }
     if (!query["$and"]) {
-      query["$and"] = [{ price: { $lte: query["priceLessThan"] } }];
+      query["$and"] = [{ price: { $lt: query["priceLessThan"] } }];
       delete query["priceLessThan"];
     } else {
-      query["$and"].push({ price: { $lte: query["priceLessThan"] } });
+      query["$and"].push({ price: { $lt: query["priceLessThan"] } });
       delete query["priceLessThan"];
     }
   }
@@ -373,11 +380,19 @@ function getProducts(query) {
   }
 }
 
+/**
+ *
+ * @param {Request body of the cart} body
+ * @returns {error if there is any else it will validate it}
+ */
 function updateProduct(body) {
   if (JSON.stringify(body) == "{}") return "request body cannot be empty";
 
   body["currencyFormat"] = "₹";
+
   let check = 0;
+  if(body.validation) check++
+  delete body.validation
 
   if ("style" in body) productFields.push("style");
 
@@ -443,7 +458,7 @@ function updateProduct(body) {
     check++;
   }
   if ("installments" in body) {
-    if (typeof body["installments"] != "number") {
+    if (Number(body["installments"])==NaN) {
       return "installments must be a number";
     }
     if (body["installments"] <= 0) {
@@ -459,6 +474,11 @@ function updateProduct(body) {
   }
 }
 
+/**
+ *
+ * @param {takes the req.files that's coming from the multer} arr
+ * @returns {error if there is any}
+ */
 function profileImage(arr) {
   if (!arr.length) return "profileImage file is missing";
   let check = false;
@@ -521,8 +541,8 @@ function updateCart(body) {
     if (!("removeProduct" in body)) {
       return `removeProductKey is missing in request body`;
     }
-    if(body["removeProduct"]!=0 && body["removeProduct"]!=1){
-      return "removeProduct can only have the value 0 & 1"
+    if (body["removeProduct"] != 0 && body["removeProduct"] != 1) {
+      return "removeProduct can only have the value 0 & 1";
     }
   } catch (err) {
     console.log(err.message);
@@ -530,32 +550,30 @@ function updateCart(body) {
   }
 }
 
-
 // ORDER VALIDATIONS
 
-function createOrder(body){
-
-  if(JSON.stringify(body)=="{}"){
-    return `request body can't be empty`
+function createOrder(body) {
+  if (JSON.stringify(body) == "{}") {
+    return `request body can't be empty`;
   }
-  if(!("cartId" in body)){
-    return `cartId is missing in request body`
+  if (!("cartId" in body)) {
+    return `cartId is missing in request body`;
   }
-  if(!id(body["cartId"])){
-    return `cartId in body is invalid`
+  if (!id(body["cartId"])) {
+    return `cartId in body is invalid`;
   }
-  if("cancellable" in body){
-    if(typeof body["cancellable"]!="boolean"){
-      return `cancellable in request body must be a boolean value`
+  if ("cancellable" in body) {
+    if (typeof body["cancellable"] != "boolean") {
+      return `cancellable in request body must be a boolean value`;
     }
   }
-  if("status" in body){
-    let arr = ["pending","completed","cancelled"]
-    if(typeof body["status"]!="string"){
-      return `status in request body can't be other than a string`
+  if ("status" in body) {
+    let arr = ["pending", "completed", "cancelled"];
+    if (typeof body["status"] != "string") {
+      return `status in request body can't be other than a string`;
     }
-    if(!arr.includes(body["status"])){
-      return `status can only have these values ${arr}`
+    if (!arr.includes(body["status"])) {
+      return `status can only have these values ${arr}`;
     }
   }
 }
@@ -578,7 +596,7 @@ module.exports = {
   createCart,
   updateAdress,
   updateCart,
-  createOrder
+  createOrder,
 };
 
 // Saved for later

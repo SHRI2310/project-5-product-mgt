@@ -30,7 +30,17 @@ const getProduct = async (req, res) => {
   try {
     let data = req.query;
     let message;
-
+    if (!Object.keys(data).length) {
+      let result = await productModel.find({ isDeleted: false });
+      if (!result.length) {
+        return res
+          .status(404)
+          .send({ status: false, message: "No products found" });
+      }
+      return res
+        .status(200)
+        .send({ status: false, message: "Success", data: result });
+    }
     if ((message = valid.getProducts(data))) {
       return res.status(400).send({ status: false, message: message });
     }
@@ -105,18 +115,18 @@ const updateProduct = async (req, res) => {
         .status(400)
         .send({ status: false, message: "productId in params isn't valid" });
     }
+    if(req.files.length) data.validation = true
+
     if ((message = valid.updateProduct(data))) {
       return res.status(400).send({ status: false, message: message });
     }
     if ("title" in data) {
       let product = await productModel.findOne({ title: data.title });
       if (product) {
-        return res
-          .status(409)
-          .send({
-            status: false,
-            message: "a product with this title already exists",
-          });
+        return res.status(409).send({
+          status: false,
+          message: "a product with this title already exists",
+        });
       }
     }
 
@@ -151,7 +161,7 @@ const deleteProduct = async (req, res) => {
     }
     let result = await productModel.findByIdAndUpdate(productId, {
       isDeleted: true,
-      deletedAt:new Date()
+      deletedAt: new Date(),
     });
     if (!result) {
       return res
@@ -159,14 +169,15 @@ const deleteProduct = async (req, res) => {
         .send({ status: false, message: "There is no product with this id" });
     }
     if (result.isDeleted) {
-      return res.status(200).send({
-        status: true,
-        message: "The product is already marked as deleted",
+      return res.status(404).send({
+        status: false,
+        message: "Product not found",
       });
     }
-    return res.status(202).send({
+    return res.status(200).send({
       status: true,
       message: "The product has been deleted successfully",
+      data:result
     });
   } catch (err) {
     console.log(err.message);

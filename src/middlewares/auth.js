@@ -6,11 +6,17 @@ const auth = async (req, res, next) => {
     let userId = req.params.userId;
     let token = req.headers.authorization;
     if (!token) {
+      return res.status(400).send({
+        status: false,
+        message: "token is missing in authorization headers",
+      });
+    }
+    if (!token.match("Bearer")) {
       return res
-        .status(400)
+        .status(401)
         .send({
           status: false,
-          message: "token is missing in authorization headers",
+          message: "the token in headers isn't a bearer token",
         });
     }
     token = token.replace("Bearer ", "");

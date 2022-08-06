@@ -49,26 +49,24 @@ const createCart = async (req, res) => {
       if (cartItems.length == 0) {
         cartItems.push(({ productId, quantity } = data));
       } else {
-        for (let i = cartItems.length-1; i >= 0; i--) {
+        for (let i = cartItems.length - 1; i >= 0; i--) {
           if (cartItems[i]["productId"] == data["productId"]) {
             cartItems[i]["quantity"] += data["quantity"];
-            break
+            break;
           }
-          console.log(i)
-          if(i==0){
-            cartItems.push(({ productId, quantity } = data))
+          if (i == 0) {
+            cartItems.push(({ productId, quantity } = data));
           }
         }
       }
-      cart["items"] = cartItems
+      cart["items"] = cartItems;
       let newPrice = cart["totalPrice"] + product["price"] * data["quantity"];
-      let newItems = cart["totalItems"] + data["quantity"];
       let result = await cartModel.findByIdAndUpdate(
         cart._id,
         {
           items: cartItems,
           totalPrice: newPrice,
-          totalItems: newItems,
+          totalItems: cartItems.length,
         },
         { new: true }
       );
@@ -160,22 +158,20 @@ const updateCart = async (req, res) => {
       if (cartItems[i]["productId"] == data["productId"]) {
         if (data["removeProduct"]) {
           if (cartItems[i]["quantity"] == 1) {
-            cartItems.splice(i, 1)
+            cartItems.splice(i, 1);
             cart.totalPrice -= product.price;
-            cart.totalItems--
-          }
-          if (cartItems[i]["quantity"] > 1) {
+            cart.totalItems--;
+          } else if (cartItems[i]["quantity"] > 1) {
             cartItems[i]["quantity"]--;
             cart.totalPrice -= product.price;
-            cart.totalItems--
           }
           if (cartItems.length == 0) message = "cart is empty";
         } else {
-          cart.totalPrice -= product.price*cartItems[i]["quantity"];
-          cart.totalItems -= cartItems[i]["quantity"]
+          cart.totalPrice -= product.price * cartItems[i]["quantity"];
+          cart.totalItems--;
           cartItems.splice(i, 1);
-          if (cartItems.length == 0){
-             message = "cart is empty";
+          if (cartItems.length == 0) {
+            message = "cart is empty";
           }
         }
         existingProduct = i + 1;
@@ -190,18 +186,22 @@ const updateCart = async (req, res) => {
     }
 
     if (message) {
-      let result = await cartModel.findByIdAndDelete(cart._id);
+      let result = await cartModel.findByIdAndUpdate(
+        cart._id,
+        { items: [], totalPrice: 0, totalItems: 0 },
+        { new: true }
+      );
       return res.status(202).send({
         status: true,
         message:
-          "There was only one product in your cart that's why your cart is deleted",
+          "There was only one product in your cart that's why your cart is now empty",
         data: result,
       });
     }
 
     let result = await cartModel.findByIdAndUpdate(
       cart._id,
-      { items,totalPrice,totalItems }=cart,
+      ({ items, totalPrice, totalItems } = cart),
       { new: true }
     );
 
@@ -218,12 +218,21 @@ const deleteCart = async (req, res) => {
   try {
     let userId = req.params.userId;
 
-    let cart = await cartModel.findOneAndDelete({ userId: userId });
+    let cart = await cartModel.findOneAndUpdate(
+      { userId: userId },
+      { items: [], totalPrice: 0, totalItems: 0 },
+      { new: true }
+    );
     if (!cart) {
       return res
         .status(404)
         .send({ status: false, message: "there is no cart for this user" });
     }
+
+    /**
+     *@If_you_want_to_see_the_response_then_set_the_status_code_to_202_because_204
+     *@doesn't deliver any content. We've used 204 because it was mentioned in readme file
+     */
 
     return res
       .status(204)
