@@ -256,8 +256,9 @@ function createProduct(body) {
       }
 
       if (x == "price") {
-        if (body[x] <= 0) return `price must be a positive number`;
         body[x] = Number(body[x]);
+        if(String(body[x])=="NaN") return `price must be a number`
+        if (body[x] <= 0) return `price must be a positive number`;
         return;
       }
 
@@ -419,8 +420,9 @@ function updateProduct(body) {
         }
 
         if (x == "price") {
-          if (body[x] <= 0) return `price must be a positive number`;
           body[x] = Number(body[x]);
+          if(String(body[x])=="NaN") return `price must be a number`
+          if (body[x] <= 0) return `price must be a positive number`;
           return;
         }
 
