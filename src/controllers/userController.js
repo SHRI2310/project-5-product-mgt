@@ -79,8 +79,7 @@ const registerUser = async (req, res) => {
       return res.status(400).send({ status: false, message: message });
     }
 
-    data.profileImage = await uploadFile(req.files[0])
-
+    data.profileImage = "hello worlds"//await uploadFile(req.files[0])
     let result = await userModel.create(data);
     res.status(201).send({ status: true, message: result });
   } catch (err) {
@@ -223,7 +222,7 @@ const updateUser = async (req, res) => {
         return res.status(400).send({ status: false, message: message });
       }
   
-      data.profileImage = await uploadFile(req.files[0])
+      data.profileImage = "hello worlds"//await uploadFile(req.files[0])
       delete data.validation
     }
     let result = await userModel.findByIdAndUpdate(userId, data, { new: true });

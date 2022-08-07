@@ -53,7 +53,7 @@ const createProduct = async (req, res) => {
       return res.status(400).send({ status: false, message: message });
     }
 
-    data.productImage = await uploadFile(req.files[0])
+    data.productImage ="hello world" //await uploadFile(req.files[0])
 
     let result = await productModel.create(data);
     res.status(201).send({ status: true, message: result });
@@ -181,7 +181,7 @@ const updateProduct = async (req, res) => {
         return res.status(400).send({ status: false, message: message });
       }
   
-      data.productImage = await uploadFile(req.files[0])
+      data.productImage = "hello worlds"//await uploadFile(req.files[0])
       delete data.validation
     }
 
