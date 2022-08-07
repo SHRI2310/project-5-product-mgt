@@ -29,17 +29,15 @@ const createOrder = async (req, res) => {
       });
     }
     if (!cart["items"].length) {
-      return res
-        .status(400)
-        .send({
-          status: false,
-          message: "you don't have any product in your cart to create an order",
-        });
+      return res.status(400).send({
+        status: false,
+        message: "you don't have any product in your cart to create an order",
+      });
     }
 
-    let totalQuantity = 0
-    for(let i=0;i<cart.items.length;i++){
-      totalQuantity+=cart.items[i].quantity
+    let totalQuantity = 0;
+    for (let i = 0; i < cart.items.length; i++) {
+      totalQuantity += cart.items[i].quantity;
     }
 
     data["userId"] = userId;
@@ -51,7 +49,11 @@ const createOrder = async (req, res) => {
 
     res.status(201).send({ status: true, message: "Success", data: order });
 
-    await cartModel.findByIdAndUpdate(cart._id,{items:[],totalItems:0,totalPrice:0});
+    await cartModel.findByIdAndUpdate(cart._id, {
+      items: [],
+      totalItems: 0,
+      totalPrice: 0,
+    });
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ status: false, message: err.message });
@@ -87,6 +89,14 @@ const updateOrder = async (req, res) => {
         .status(404)
         .send({ status: false, message: "there is no order with this id" });
     }
+    if (order.userId != userId) {
+      return res
+        .status(403)
+        .send({
+          status: false,
+          message: "you ain't authorized to perform this action",
+        });
+    }
     if (order.isDeleted) {
       return res.status(404).send({
         status: false,
@@ -100,7 +110,7 @@ const updateOrder = async (req, res) => {
     }
     if (order.status != "pending") {
       return res.status(400).send({
-        status: falsee,
+        status: false,
         message: `the order can't be cancelled because of it's current status, "the current status is ${order.status}`,
       });
     }
