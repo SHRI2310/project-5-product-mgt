@@ -1,17 +1,21 @@
 const mongoose = require("mongoose");
-const cartModel = require("../models/cartModel");
 
 let userFields = ["fname", "lname", "email", "phone", "password", "address"];
 let nameRegex = /^[A-Za-z]+$/;
 let positive = /^[0-9]+$/;
-let cityRegex = /^[A-Za-z ]+$/;
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 let phoneRegex = /^[6-9]{1}[0-9]{9}$/;
 let pinRegex = /^[1-9][0-9]{5}$/;
 
 //USER VALIDATIONS
+
+/**
+ * @param {takes request body of the createUser API} body
+ * @returns {error if there is any}
+ */
+
 function createUser(body) {
-  if (JSON.stringify(body) == "{}") return "request body cannot be empty";
+  if (!Object.keys(body).length) return "request body cannot be empty";
   let error = userFields
     .map((x) => {
       if (!(x in body)) return `${x} is missing`;
@@ -98,10 +102,9 @@ function address(ele) {
 }
 
 function updateUser(body) {
-  if (JSON.stringify(body) == "{}") return "request body cannot be empty";
+  if (!Object.keys(body).length) return "request body cannot be empty";
   let invalidKey = 0;
-  if(body.validation) invalidKey++
-  delete body.validation
+  if (body.validation) invalidKey++;
   let error = userFields
     .map((x) => {
       if (x in body) {
@@ -137,81 +140,77 @@ function updateUser(body) {
 
   if (error) return error;
   if (!invalidKey) return "The data sent you is invalid";
+  if(invalidKey==1 && body.validation ==1) return "The data sent you is invalid"
 }
 
 function updateAdress(body) {
-  try {
-    if (
-      !(
-        typeof body["address"] == "object" &&
-        Array.isArray(body["address"]) != true &&
-        body["address"] != null
-      )
-    ) {
-      return `address must be an object`;
-    }
-    if (!("shipping" in body["address"] || "billing" in body["address"])) {
-      return `either shipping or billing address is required for update`;
-    }
-    let fields = ["shipping", "billing"];
-    let error = fields
-      .map((x) => {
-        if (x in body["address"]) {
-          if (
-            !(
-              typeof body["address"][x] == "object" &&
-              Array.isArray(body["address"][x]) != true &&
-              body["address"][x] != null
-            )
-          ) {
-            return `${x} address must be an object`;
-          }
-          if (
-            !(
-              "city" in body["address"][x] ||
-              "street" in body["address"][x] ||
-              "pincode" in body["address"][x]
-            )
-          ) {
-            return `${x} address needs to have atleast one valid thing to update; city, street, pincode`;
-          }
-          if ("city" in body["address"][x]) {
-            if (typeof body["address"][x]["city"] != "string") {
-              return ` city in ${x} address should be a string`;
-            }
-            body["address"][x]["city"] = body["address"][x]["city"].trim();
-            if (!body["address"][x]["city"].length) {
-              return ` city in ${x} address can't be empty`;
-            }
-            body[`address.${x}.city`] = body["address"][x]["city"];
-          }
-          if ("street" in body["address"][x]) {
-            if (typeof body["address"][x]["street"] != "string") {
-              return ` street in ${x} address should be a string`;
-            }
-            body["address"][x]["street"] = body["address"][x]["street"].trim();
-            if (!body["address"][x]["street"].length) {
-              return ` street in ${x} address can't be empty`;
-            }
-            body[`address.${x}.street`] = body["address"][x]["street"];
-          }
-          if ("pincode" in body["address"][x]) {
-            if (!pinRegex.test(body["address"][x]["pincode"])) {
-              return `pincode in ${x} address isn't valid`;
-            }
-            body[`address.${x}.pincode`] = parseInt(
-              body["address"][x]["pincode"]
-            );
-          }
-        }
-      })
-      .find((x) => x != undefined);
-    if (error) return error;
-    delete body["address"];
-  } catch (err) {
-    console.log(err.message);
-    return err.message;
+  if (
+    !(
+      typeof body["address"] == "object" &&
+      Array.isArray(body["address"]) != true &&
+      body["address"] != null
+    )
+  ) {
+    return `address must be an object`;
   }
+  if (!("shipping" in body["address"] || "billing" in body["address"])) {
+    return `either shipping or billing address is required for update`;
+  }
+  let fields = ["shipping", "billing"];
+  let error = fields
+    .map((x) => {
+      if (x in body["address"]) {
+        if (
+          !(
+            typeof body["address"][x] == "object" &&
+            Array.isArray(body["address"][x]) != true &&
+            body["address"][x] != null
+          )
+        ) {
+          return `${x} address must be an object`;
+        }
+        if (
+          !(
+            "city" in body["address"][x] ||
+            "street" in body["address"][x] ||
+            "pincode" in body["address"][x]
+          )
+        ) {
+          return `${x} address needs to have atleast one valid thing to update; city, street, pincode`;
+        }
+        if ("city" in body["address"][x]) {
+          if (typeof body["address"][x]["city"] != "string") {
+            return ` city in ${x} address should be a string`;
+          }
+          body["address"][x]["city"] = body["address"][x]["city"].trim();
+          if (!body["address"][x]["city"].length) {
+            return ` city in ${x} address can't be empty`;
+          }
+          body[`address.${x}.city`] = body["address"][x]["city"];
+        }
+        if ("street" in body["address"][x]) {
+          if (typeof body["address"][x]["street"] != "string") {
+            return ` street in ${x} address should be a string`;
+          }
+          body["address"][x]["street"] = body["address"][x]["street"].trim();
+          if (!body["address"][x]["street"].length) {
+            return ` street in ${x} address can't be empty`;
+          }
+          body[`address.${x}.street`] = body["address"][x]["street"];
+        }
+        if ("pincode" in body["address"][x]) {
+          if (!pinRegex.test(body["address"][x]["pincode"])) {
+            return `pincode in ${x} address isn't valid`;
+          }
+          body[`address.${x}.pincode`] = parseInt(
+            body["address"][x]["pincode"]
+          );
+        }
+      }
+    })
+    .find((x) => x != undefined);
+  if (error) return error;
+  delete body["address"];
 }
 
 //PRODUCT VALIDATIONS
@@ -225,8 +224,13 @@ let productFields = [
 
 let productSize = ["S", "XS", "M", "X", "L", "XXL", "XL"];
 
+/**
+ * @param {takes request body of the createProduct API} body
+ * @returns {error if there is any}
+ */
+
 function createProduct(body) {
-  if (JSON.stringify(body) == "{}") return "request body cannot be empty";
+  if (!Object.keys(body).length) return "request body cannot be empty";
 
   body["currencyFormat"] = "₹";
 
@@ -279,11 +283,11 @@ function createProduct(body) {
     }
   }
 
-  if (!body["availableSizes"].length){
+  if (!body["availableSizes"].length) {
     return `availableSizes array doesn't have any valid size, it should only contain value from ${productSize}`;
   }
 
-  body["availableSizes"] = [...new Set(body["availableSizes"])]
+  body["availableSizes"] = [...new Set(body["availableSizes"])];
 
   if ("isFreeShipping" in body) {
     if (typeof body["isFreeShipping"] != "boolean")
@@ -305,15 +309,20 @@ let filters = [
   "priceSort",
 ];
 
+/**
+ * @param {takes request query of the getProducts API} query
+ * @returns {error if there is any}
+ */
+
 function getProducts(query) {
-  if (JSON.stringify(query) == "{}") return;
+  if (!Object.keys(query).length) return;
 
   for (let key in query) {
     if (!filters.includes(key)) {
       delete query[key];
     }
   }
-  if (JSON.stringify(query) == "{}") return "these aren't valid filters";
+  if (!Object.keys(query).length) return "these aren't valid filters";
 
   if (
     "size" in query &&
@@ -327,8 +336,8 @@ function getProducts(query) {
     if (!productSize.includes(query.size)) {
       return `please provide a size filter from one of these ${productSize}`;
     }
-    query["availableSizes"] = {}
-    query["availableSizes"]["$in"] = query.size.split()
+    query["availableSizes"] = {};
+    query["availableSizes"]["$in"] = query.size.split();
     delete query.size;
   }
   if (Array.isArray(query.size)) {
@@ -336,8 +345,8 @@ function getProducts(query) {
     if (!arr.length) {
       return `please provide a size filter from one of these ${productSize}`;
     }
-    query["availableSizes"] = {}
-    query["availableSizes"]["$all"] = query.size
+    query["availableSizes"] = {};
+    query["availableSizes"]["$all"] = query.size;
     delete query.size;
   }
   if ("name" in query) {
@@ -381,18 +390,17 @@ function getProducts(query) {
 }
 
 /**
- *
  * @param {Request body of the cart} body
  * @returns {error if there is any else it will validate it}
  */
+
 function updateProduct(body) {
-  if (JSON.stringify(body) == "{}") return "request body cannot be empty";
+  if (!Object.keys(body).length) return "request body cannot be empty";
 
   body["currencyFormat"] = "₹";
 
   let check = 0;
-  if(body.validation) check++
-  delete body.validation
+  if (body.validation) check++;
 
   if ("style" in body) productFields.push("style");
 
@@ -458,7 +466,7 @@ function updateProduct(body) {
     check++;
   }
   if ("installments" in body) {
-    if (Number(body["installments"])==NaN) {
+    if (Number(body["installments"]) == NaN) {
       return "installments must be a number";
     }
     if (body["installments"] <= 0) {
@@ -472,13 +480,14 @@ function updateProduct(body) {
   if (!check) {
     return "The data you sent isn't valid";
   }
+  if(check==1 && body.validation==1) return "the data you sent is invalid"
 }
 
 /**
- *
  * @param {takes the req.files that's coming from the multer} arr
- * @returns {error if there is any}
+ * @returns {error if there is any else sets the index of the image to zero}
  */
+
 function profileImage(arr) {
   if (!arr.length) return "profileImage file is missing";
   let check = false;
@@ -497,11 +506,44 @@ function profileImage(arr) {
   });
 
   if (!check) return "profileImage file is required";
-  if (!ele) return "the format of profileImage is invalid";
+  if (!ele)
+    return "the format of profileImage is invalid it should be either png, jpg, jpeg";
 }
 
+/**
+ * @param {takes the req.files that's coming from the multer} arr
+ * @returns {error if there is any else sets the index of the image to zero}
+ */
+
+function productImage(arr) {
+  if (!arr.length) return "productImage file is missing";
+  let check = false;
+  let ele = arr.find((x) => {
+    if (x["fieldname"] == "productImage") {
+      check = true;
+      if (
+        x.mimetype == "image/png" ||
+        x.mimetype == "image/jpg" ||
+        x.mimetype == "image/jpeg"
+      ) {
+        arr[0] = x;
+        return true;
+      }
+    }
+  });
+
+  if (!check) return "productImage file is required";
+  if (!ele)
+    return "the format of productImage is invalid it should be either png, jpg, jpeg";
+}
+
+/**
+ * @param {takes request body of the createCart API} body
+ * @returns {error if there is any}
+ */
+
 function createCart(body) {
-  if (JSON.stringify(body) == "{}") {
+  if (!Object.keys(body).length) {
     return "cartBody can't be empty";
   }
   if (!("productId" in body)) {
@@ -530,30 +572,35 @@ function createCart(body) {
   }
 }
 
+/**
+ * @param {takes the request body of the updateCart API} body
+ * @returns {error if there is any}
+ */
+
 function updateCart(body) {
-  try {
-    if (!("productId" in body)) {
-      return `productId is missing in request body`;
-    }
-    if (!id(body.productId)) {
-      return "productId in request body isn't valid";
-    }
-    if (!("removeProduct" in body)) {
-      return `removeProductKey is missing in request body`;
-    }
-    if (body["removeProduct"] != 0 && body["removeProduct"] != 1) {
-      return "removeProduct can only have the value 0 & 1";
-    }
-  } catch (err) {
-    console.log(err.message);
-    return err.message;
+  if (!("productId" in body)) {
+    return `productId is missing in request body`;
+  }
+  if (!id(body.productId)) {
+    return "productId in request body isn't valid";
+  }
+  if (!("removeProduct" in body)) {
+    return `removeProductKey is missing in request body`;
+  }
+  if (body["removeProduct"] != 0 && body["removeProduct"] != 1) {
+    return "removeProduct can only have the value 0 & 1";
   }
 }
 
 // ORDER VALIDATIONS
 
+/**
+ * @param {takes request body of the createOrder API} body
+ * @returns {error if there is any}
+ */
+
 function createOrder(body) {
-  if (JSON.stringify(body) == "{}") {
+  if (!Object.keys(body).length) {
     return `request body can't be empty`;
   }
   if (!("cartId" in body)) {
@@ -578,6 +625,11 @@ function createOrder(body) {
   }
 }
 
+/**
+ * @param {takes the mongooseId coming from the user} id
+ * @returns {true or false based on the id status}
+ */
+
 function id(id) {
   if (mongoose.isValidObjectId(id) && id.length == 24) return true;
   return false;
@@ -597,6 +649,7 @@ module.exports = {
   updateAdress,
   updateCart,
   createOrder,
+  productImage,
 };
 
 // Saved for later

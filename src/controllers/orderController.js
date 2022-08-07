@@ -13,12 +13,6 @@ const createOrder = async (req, res) => {
     let data = req.body;
     let message;
 
-    let user = await userModel.findById(userId);
-    if (!user) {
-      return res
-        .status(404)
-        .send({ status: false, message: "there is no user with this id" });
-    }
     if ((message = valid.createOrder(data))) {
       return res.status(400).send({ status: false, message: message });
     }

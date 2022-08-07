@@ -18,7 +18,7 @@ let uploadFile = async (file) => {
     let uploadParams = {
       ACL: "public-read",
       Bucket: "classroom-training-bucket",
-      Key: "group19/" + file.originalname + new Date(),
+      Key: new Date() + "group19/" + file.originalname,
       Body: file.buffer,
     };
     s3.upload(uploadParams, function (err, data) {
@@ -70,16 +70,16 @@ const registerUser = async (req, res) => {
     await bcrypt.hash(data.password, 10).then(function (hash) {
       data.password = hash;
     });
-    // if (!req.files) {
-    //   return res
-    //     .status(400)
-    //     .send({ status: false, message: "profileImage is missing" });
-    // }
-    // if ((message = valid.profileImage(req.files))) {
-    //   return res.status(400).send({ status: false, message: message });
-    // }
+    if (!req.files) {
+      return res
+        .status(400)
+        .send({ status: false, message: "profileImage is missing" });
+    }
+    if ((message = valid.profileImage(req.files))) {
+      return res.status(400).send({ status: false, message: message });
+    }
 
-    // data.profileImage = await uploadFile(req.files[0])
+    data.profileImage = await uploadFile(req.files[0])
 
     let result = await userModel.create(data);
     res.status(201).send({ status: true, message: result });
@@ -169,11 +169,14 @@ const userProfile = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    let data = req.body;
+    let data = JSON.parse(JSON.stringify(req.body));
     let userId = req.params.userId;
     let message;
 
-    if(req.files.length) data.validation = true
+    if(req.files){
+      data.validation = 1
+      if(req.files.length) data.validation+=1
+    }
 
     if ((message = valid.updateUser(data))) {
       return res.status(400).send({ status: false, message: message });
@@ -214,6 +217,14 @@ const updateUser = async (req, res) => {
           });
         }
       }
+    }
+    if(data.validation==2){
+      if ((message = valid.profileImage(req.files))) {
+        return res.status(400).send({ status: false, message: message });
+      }
+  
+      data.profileImage = await uploadFile(req.files[0])
+      delete data.validation
     }
     let result = await userModel.findByIdAndUpdate(userId, data, { new: true });
     if (!result) {

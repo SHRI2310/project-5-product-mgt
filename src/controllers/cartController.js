@@ -12,12 +12,7 @@ const createCart = async (req, res) => {
     if ((cart = valid.createCart(data))) {
       return res.status(400).send({ status: false, message: cart });
     }
-    let user = await userModel.findById(userId);
-    if (!user) {
-      return res
-        .status(404)
-        .send({ status: false, message: "there is no user with this id" });
-    }
+
     cart = await cartModel.findOne({ userId: userId });
     if ("cartId" in data) {
       if (!cart) {
@@ -120,12 +115,7 @@ const updateCart = async (req, res) => {
     if ((message = valid.updateCart(data))) {
       return res.status(400).send({ status: false, message: message });
     }
-    let user = await userModel.findById(userId);
-    if (!user) {
-      return res
-        .status(404)
-        .send({ status: false, message: "there is no user with this id" });
-    }
+
     let cart = await cartModel.findOne({ userId: userId });
     if (!cart) {
       return res.status(404).send({

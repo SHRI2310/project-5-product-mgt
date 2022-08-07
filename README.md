@@ -284,7 +284,7 @@ Send [form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData)
 
 ### PUT /users/:userId/cart (Remove product / Reduce a product's quantity from the cart)
 - Updates a cart by either decrementing the quantity of a product by 1 or deleting a product from the cart.
-- Get cart id in request body.
+- Get cart id in request body. 
 - Get productId in request body.
 - Get key 'removeProduct' in request body. 
 - Make sure that cart exist.

@@ -30,10 +30,10 @@ const ProductSchema = new mongoose.Schema( {
       type: Boolean,
       default: false,
     },
-    // productImage: {
-    //   type: String,
-    //   required: true,
-    // },
+    productImage: {
+      type: String,
+      required: true,
+    },
     style: { type: String, trim: true },
     availableSizes: {
       type: [String],
