@@ -90,12 +90,10 @@ const updateOrder = async (req, res) => {
         .send({ status: false, message: "there is no order with this id" });
     }
     if (order.userId != userId) {
-      return res
-        .status(403)
-        .send({
-          status: false,
-          message: "you ain't authorized to perform this action",
-        });
+      return res.status(403).send({
+        status: false,
+        message: "you ain't authorized to perform this action",
+      });
     }
     if (order.isDeleted) {
       return res.status(404).send({
@@ -114,6 +112,18 @@ const updateOrder = async (req, res) => {
         message: `the order can't be cancelled because of it's current status, "the current status is ${order.status}`,
       });
     }
+    if (data.status == "completed") {
+      let result = await orderModel.findByIdAndUpdate(
+        data["orderId"],
+        {
+          status: "completed",
+        },
+        { new: true }
+      );
+      return res
+      .status(200)
+      .send({ status: true, message: "Success", data: result });
+    } else if (data.status == "cancelled") {
     let result = await orderModel.findByIdAndUpdate(
       data["orderId"],
       {
@@ -121,10 +131,10 @@ const updateOrder = async (req, res) => {
       },
       { new: true }
     );
-
     return res
       .status(200)
       .send({ status: true, message: "Success", data: result });
+    }
   } catch (err) {
     console.log(err.message);
     res.status(500).send({ status: false, message: err.message });
